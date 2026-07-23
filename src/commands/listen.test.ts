@@ -112,16 +112,18 @@ describe("startListening", () => {
     const forward = mock(okResponse) as unknown as typeof fetch;
     run({ forward });
 
-    const payload = {
+    // The server sends `payload.payload` as the exact raw JSON string it
+    // signed, not a parsed object. The client must forward it byte-for-byte.
+    const rawPayload = JSON.stringify({
       type: "order.created",
       timestamp: "2026-01-01T00:00:00Z",
       data: {},
-    };
+    });
 
     instanceAt(0).emit({
       id: "evt_1",
       key: "webhook",
-      payload: { webhook_event_id: "whid_1", payload },
+      payload: { webhook_event_id: "whid_1", payload: rawPayload },
       headers: {
         "user-agent": "polar.sh webhooks",
         "content-type": "application/json",
@@ -135,7 +137,7 @@ describe("startListening", () => {
       "http://localhost:3000/webhook",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify(payload),
+        body: rawPayload,
       }),
     );
   });

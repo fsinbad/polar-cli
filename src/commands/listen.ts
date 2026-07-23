@@ -136,16 +136,27 @@ export const startListening = ({
           return;
         }
 
+        const rawPayload = webhookEvent.right.payload.payload;
+
+        const eventType = (() => {
+          try {
+            const parsed = JSON.parse(rawPayload) as { type?: string };
+            return parsed.type ?? "event";
+          } catch {
+            return "event";
+          }
+        })();
+
         forward(forwardUrl, {
           method: "POST",
           headers: webhookEvent.right.headers,
-          body: JSON.stringify(webhookEvent.right.payload.payload),
+          body: rawPayload,
         })
           .then((res) => {
             const cyan = "\x1b[36m";
             const reset = "\x1b[0m";
             console.log(
-              `>> '${cyan}${webhookEvent.right.payload.payload.type}${reset}' >> ${res.status} ${res.statusText}`,
+              `>> '${cyan}${eventType}${reset}' >> ${res.status} ${res.statusText}`,
             );
           })
           .catch((err) => {
